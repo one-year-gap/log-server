@@ -3,6 +3,9 @@ package com.holliverse.logserver.config;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.holliverse.logserver.config.properties.KafkaAppProperties;
+
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -15,6 +18,7 @@ import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.listener.ContainerProperties;
 
+@Slf4j
 @Configuration
 @EnableKafka
 public class KafkaSpeedConsumerConfig {
@@ -64,6 +68,7 @@ public class KafkaSpeedConsumerConfig {
                 return !FILTER_EVENT_NAME.equals(node.path("event_name").asText(""));
             } catch (Exception e) {
                 // 파싱 불가 = 깨진 JSON → 폐기 (Consumer의 DLQ와 역할 분리)
+                log.warn("레코드 필터링 중 value 매칭 실패로 폐기합니다. value={}", record.value(), e);
                 return true;
             }
         });
