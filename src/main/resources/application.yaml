@@ -10,3 +10,6 @@ app:
     listener:
       max-poll-records: 1
       ack-mode: RECORD
+    producer:
+      dlq-acks: all
+      dlq-retries: 3

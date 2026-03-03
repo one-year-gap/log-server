@@ -12,6 +12,7 @@ public class KafkaAppProperties {
     private String bootstrapServers = "localhost:9092";
     private Groups groups = new Groups();
     private Listener listener = new Listener();
+    private Producer producer = new Producer();
 
     @Getter
     @Setter
@@ -24,5 +25,12 @@ public class KafkaAppProperties {
     public static class Listener {
         private int maxPollRecords = 1;
         private String ackMode = "RECORD";
+    }
+
+    @Getter
+    @Setter
+    public static class Producer {
+        private String dlqAcks = "all";
+        private int dlqRetries = 3;
     }
 }
