@@ -1,10 +1,18 @@
 spring:
   application:
     name: log-server
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:local_redis_pass}
 
 app:
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    topics:
+      client-events: client-event-logs
+      error: error-logs
     groups:
       speed: speed-layer-group
     listener:
