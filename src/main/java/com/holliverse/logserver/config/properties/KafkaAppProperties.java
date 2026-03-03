@@ -10,9 +10,17 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class KafkaAppProperties {
 
     private String bootstrapServers = "localhost:9092";
+    private Topics topics = new Topics();
     private Groups groups = new Groups();
     private Listener listener = new Listener();
     private Producer producer = new Producer();
+
+    @Getter
+    @Setter
+    public static class Topics {
+        private String clientEvents = "client-event-logs";
+        private String error = "error-logs";
+    }
 
     @Getter
     @Setter
