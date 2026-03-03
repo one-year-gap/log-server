@@ -2,6 +2,7 @@ package com.holliverse.logserver.config.properties;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.kafka.listener.ContainerProperties;
 
 @Getter
 @Setter
@@ -30,7 +31,7 @@ public class KafkaAppProperties {
     @Setter
     public static class Listener {
         private int maxPollRecords = 1;
-        private String ackMode = "RECORD";
+        private ContainerProperties.AckMode ackMode = ContainerProperties.AckMode.RECORD;
     }
 
     @Getter

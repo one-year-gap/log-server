@@ -60,7 +60,7 @@ public class KafkaSpeedConsumerConfig {
             new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(speedConsumerFactory());
         factory.getContainerProperties().setAckMode(
-            ContainerProperties.AckMode.valueOf(kafkaAppProperties.getListener().getAckMode()));
+            kafkaAppProperties.getListener().getAckMode());
 
         factory.setRecordFilterStrategy(record -> {
             try {
