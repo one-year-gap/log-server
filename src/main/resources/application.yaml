@@ -1,3 +1,12 @@
 spring:
   application:
     name: log-server
+
+app:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    groups:
+      speed: speed-layer-group
+    listener:
+      max-poll-records: 1
+      ack-mode: RECORD

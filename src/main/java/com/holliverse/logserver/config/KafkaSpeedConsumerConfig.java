@@ -1,10 +1,10 @@
 package com.holliverse.logserver.config;
 
+import com.holliverse.logserver.config.properties.KafkaAppProperties;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
@@ -17,11 +17,11 @@ import org.springframework.kafka.listener.ContainerProperties;
 @EnableKafka
 public class KafkaSpeedConsumerConfig {
 
-    @Value("${spring.kafka.bootstrap-servers:localhost:9092}") // 로컬에서 9092 -> 나중에 msk 구성 시, 변경 필요
-    private String bootstrapServers;
+    private final KafkaAppProperties kafkaAppProperties;
 
-    @Value("${app.kafka.groups.speed:speed-layer-group}") // 컨슈머 그룹 이름 
-    private String speedGroupId;
+    public KafkaSpeedConsumerConfig(KafkaAppProperties kafkaAppProperties) {
+        this.kafkaAppProperties = kafkaAppProperties;
+    }
 
     /* consumer factory bean */
     // MAX_POLL_RECORDS_CONFIG, 1 (중요): 폴링할때 한건만 가져옴 
@@ -31,12 +31,12 @@ public class KafkaSpeedConsumerConfig {
     @Bean
     public ConsumerFactory<String, String> speedConsumerFactory() {
         Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, speedGroupId);
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaAppProperties.getBootstrapServers());
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, kafkaAppProperties.getGroups().getSpeed());
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
-        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 1);
+        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, kafkaAppProperties.getListener().getMaxPollRecords());
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         return new DefaultKafkaConsumerFactory<>(props);
     }
@@ -48,7 +48,8 @@ public class KafkaSpeedConsumerConfig {
         ConcurrentKafkaListenerContainerFactory<String, String> factory =
             new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(speedConsumerFactory());
-        factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
+        factory.getContainerProperties().setAckMode(
+            ContainerProperties.AckMode.valueOf(kafkaAppProperties.getListener().getAckMode()));
         return factory;
     }
 }
