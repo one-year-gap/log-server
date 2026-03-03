@@ -1,5 +1,7 @@
 package com.holliverse.logserver.config;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.holliverse.logserver.config.properties.KafkaAppProperties;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,17 +19,20 @@ import org.springframework.kafka.listener.ContainerProperties;
 @EnableKafka
 public class KafkaSpeedConsumerConfig {
 
-    private final KafkaAppProperties kafkaAppProperties;
+    private static final String FILTER_EVENT_NAME = "click_product_detail";
 
-    public KafkaSpeedConsumerConfig(KafkaAppProperties kafkaAppProperties) {
+    private final KafkaAppProperties kafkaAppProperties;
+    private final ObjectMapper objectMapper;
+
+    public KafkaSpeedConsumerConfig(KafkaAppProperties kafkaAppProperties, ObjectMapper objectMapper) {
         this.kafkaAppProperties = kafkaAppProperties;
+        this.objectMapper = objectMapper;
     }
 
     /* consumer factory bean */
-    // MAX_POLL_RECORDS_CONFIG, 1 (중요): 폴링할때 한건만 가져옴 
-    // ENABLE_AUTO_COMMIT_CONFIG, false: 자동 커밋 비활성화 -> 수동 커밋 필요 -> AckMode.RECORD 사용으로 코드 로직이 성공후 커밋
-    // AUTO_OFFSET_RESET_CONFIG, earliest: 컨슈머 그룹이 처음 생성되었을때, 토픽의 맨 처음 데이터부터 읽어옴 -> 데이터 유실 방지 
-
+    // MAX_POLL_RECORDS_CONFIG, 1 (중요): 폴링할때 한건만 가져옴
+    // ENABLE_AUTO_COMMIT_CONFIG, false: 자동 커밋 비활성화 → AckMode.RECORD로 처리 성공 후 커밋
+    // AUTO_OFFSET_RESET_CONFIG, earliest: 컨슈머 그룹 최초 생성 시 맨 처음 데이터부터 읽어 유실 방지
     @Bean
     public ConsumerFactory<String, String> speedConsumerFactory() {
         Map<String, Object> props = new HashMap<>();
@@ -41,8 +46,10 @@ public class KafkaSpeedConsumerConfig {
         return new DefaultKafkaConsumerFactory<>(props);
     }
 
-    /* container Factory bean -> 실제 kafka listener 돌아가는 엔진  */ 
-    // AckMode.RECORD 사용으로 코드 로직이 성공후 커밋 -> 1건 처리하자마자 즉시 커밋 
+    /* container factory bean — 실제 Kafka Listener 엔진 */
+    // RecordFilterStrategy: event_name != "click_product_detail" 이면 메시지를 @KafkaListener 전에 폐기
+    //   → true 반환 = 폐기(discard), false 반환 = 리스너로 전달
+    // AckMode.RECORD: 1건 처리 완료 즉시 커밋 → 재처리 범위를 최소화
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, String> speedLayerContainerFactory() {
         ConcurrentKafkaListenerContainerFactory<String, String> factory =
@@ -50,6 +57,17 @@ public class KafkaSpeedConsumerConfig {
         factory.setConsumerFactory(speedConsumerFactory());
         factory.getContainerProperties().setAckMode(
             ContainerProperties.AckMode.valueOf(kafkaAppProperties.getListener().getAckMode()));
+
+        factory.setRecordFilterStrategy(record -> {
+            try {
+                JsonNode node = objectMapper.readTree(record.value());
+                return !FILTER_EVENT_NAME.equals(node.path("event_name").asText(""));
+            } catch (Exception e) {
+                // 파싱 불가 = 깨진 JSON → 폐기 (Consumer의 DLQ와 역할 분리)
+                return true;
+            }
+        });
+
         return factory;
     }
 }
