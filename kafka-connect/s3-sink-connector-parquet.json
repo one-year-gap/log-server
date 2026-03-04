@@ -19,7 +19,7 @@
     "partitioner.class": "io.confluent.connect.storage.partitioner.TimeBasedPartitioner",
     "timestamp.extractor": "RecordField",
     "timestamp.field": "timestamp",
-    "path.format": "'logs/'YYYY-MM-dd'/HH'",
+    "path.format": "'events/raw/dt='YYYY-MM-dd'/hour='HH",
     "partition.duration.ms": "3600000",
 
     "locale": "ko_KR",
