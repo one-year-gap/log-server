@@ -1,0 +1,67 @@
+services:
+  kafka:
+    image: confluentinc/cp-kafka:7.7.1
+    container_name: kafka
+    ports:
+      - "9092:9092" # 호스트 PC(Spring Boot) 접속용
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:9093'
+
+      # 1. 리스너 정의: 내부용(29092), 외부용(9092), 컨트롤러용(9093)
+      KAFKA_LISTENERS: 'INTERNAL://0.0.0.0:29092,EXTERNAL://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093'
+
+      # 2. 광고용 주소 분리 (가장 중요)
+      # INTERNAL: 다른 컨테이너(kafka-ui 등)가 접속할 때 쓰는 이름
+      # EXTERNAL: 내 맥북(Spring Boot)에서 접속할 때 쓰는 이름
+      KAFKA_ADVERTISED_LISTENERS: 'INTERNAL://kafka:29092,EXTERNAL://localhost:9092'
+
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'INTERNAL'
+
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      CLUSTER_ID: 'ciWo7IWazngRchmPES6q5A=='
+      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8081:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      # 3. kafka-ui는 도커 내부망인 INTERNAL 포트(29092)를 바라보게 설정
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+    depends_on:
+      - kafka
+
+  redis: # ECS 0.5 vCPU 환경
+    image: redis:7.2-alpine
+    container_name: redis
+    ports:
+      - "6379:6379" # 영속성 설정, 256mb이상 쓰지 못하게 제한
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec 
+      --maxmemory 256mb 
+      --maxmemory-policy allkeys-lru
+      --requirepass ${REDIS_PASSWORD:-local_redis_pass}
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-local_redis_pass}
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a ${REDIS_PASSWORD:-local_redis_pass} ping | grep PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - redis_data:/data
+
+volumes:
+  kafka_data:
+  redis_data:

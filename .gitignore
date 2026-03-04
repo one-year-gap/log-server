@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+
+# pnpm
+.pnpm-store/
+
+# Gradle / Java
+.gradle/
+build/
+out/
+*.class
+
+# Environment
+.env
+.env.local
+.env.*.local
+application-local.yml
+application-*.local.yml
+*.env
+*.env.*
+
+# Secrets / keys
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+*.iml
+.vscode/
