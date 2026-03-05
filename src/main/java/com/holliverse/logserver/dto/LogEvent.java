@@ -8,7 +8,7 @@ import lombok.Data;
 public class LogEvent {
 
     @JsonProperty("event_id")
-    private String eventId;
+    private Long eventId;
 
     private String timestamp;
     private String event;
@@ -16,15 +16,9 @@ public class LogEvent {
     @JsonProperty("event_name")
     private String eventName;
 
-    @JsonProperty("member_properties")
-    private MemberProperties memberProperties;
+    @JsonProperty("member_id")
+    private Long memberId;
 
     @JsonProperty("event_properties")
     private Map<String, Object> eventProperties;
-
-    @Data
-    public static class MemberProperties {
-        @JsonProperty("member_id")
-        private String memberId;
-    }
 }
