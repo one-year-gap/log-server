@@ -189,7 +189,8 @@ class SpeedLayerConsumerIntegrationTest {
     // ================================================================
     @Test
     @DisplayName("Case 4 | event_name 필터링 — page_view 이벤트는 DB 미적재")
-    void case4_eventNameFilter_nonTargetEventIgnored() throws InterruptedException {
+    void case4_eventNameFilter_nonTargetEventIgnored() {
+        // 1) 무시될 메시지 (page_view) — product_id 40
         String wrongEvent = """
             {
               "event_id": 4001,
@@ -205,12 +206,21 @@ class SpeedLayerConsumerIntegrationTest {
               }
             }
             """;
-
         testProducer.send("client-event-logs", wrongEvent);
 
-        // RecordFilterStrategy에서 폐기되므로 DB는 빈 상태 유지 (500ms 후 확인)
-        Thread.sleep(2000);
-        assertThat(repository.count()).isEqualTo(0L);
+        // 2) 정상 처리될 메시지 (click_product_detail) — product_id 41
+        String normalEvent = buildPayload(4002L, 45L, 41L,
+            "2026-03-02T16:31:00.000Z", "정상상품", "mobile", "[]");
+        testProducer.send("client-event-logs", normalEvent);
+
+        // 3) 정상 메시지가 처리될 때까지 대기 (Thread.sleep 대신 Awaitility)
+        await().atMost(15, TimeUnit.SECONDS)
+            .untilAsserted(() ->
+                assertThat(repository.findById(new ProductViewHistoryId(45L, 41L))).isPresent());
+
+        // 4) 무시된 메시지(product_id 40)는 DB에 없고, 정상 메시지(41)만 1건 존재
+        assertThat(repository.findById(new ProductViewHistoryId(45L, 40L))).isEmpty();
+        assertThat(repository.count()).isEqualTo(1L);
     }
 
     // ================================================================
