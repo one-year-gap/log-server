@@ -1,8 +1,8 @@
 package com.holliverse.logserver.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -72,10 +72,10 @@ class PostgresLogServiceTest {
         );
 
         // tags가 JSON 배열 문자열로 직렬화되었는지 확인
-        assertThatJsonArrayEquals(tagsCaptor.getValue(), "[\"영상OTT\",\"구독결제\",\"인기\"]");
+        assertThat(tagsCaptor.getValue()).isEqualTo("[\"영상OTT\",\"구독결제\",\"인기\"]");
 
         // timestamp가 OffsetDateTime으로 올바르게 파싱되었는지 확인
-        org.assertj.core.api.Assertions.assertThat(viewedAtCaptor.getValue())
+        assertThat(viewedAtCaptor.getValue())
             .isEqualTo(OffsetDateTime.parse("2026-03-02T16:30:00.000Z"));
     }
 
@@ -95,7 +95,7 @@ class PostgresLogServiceTest {
         verify(repository).upsert(anyLong(), anyLong(), anyString(), anyString(),
             tagsCaptor.capture(), any(), anyLong());
 
-        org.assertj.core.api.Assertions.assertThat(tagsCaptor.getValue()).isEqualTo("[]");
+        assertThat(tagsCaptor.getValue()).isEqualTo("[]");
     }
 
     // ----------------------------------------------------------------
@@ -113,7 +113,7 @@ class PostgresLogServiceTest {
         verify(repository).upsert(anyLong(), anyLong(), anyString(), anyString(),
             tagsCaptor.capture(), any(), anyLong());
 
-        org.assertj.core.api.Assertions.assertThat(tagsCaptor.getValue()).isEqualTo("[]");
+        assertThat(tagsCaptor.getValue()).isEqualTo("[]");
     }
 
     // ----------------------------------------------------------------
@@ -188,9 +188,5 @@ class PostgresLogServiceTest {
         }
         event.setEventProperties(props);
         return event;
-    }
-
-    private void assertThatJsonArrayEquals(String actual, String expected) {
-        org.assertj.core.api.Assertions.assertThat(actual).isEqualTo(expected);
     }
 }
