@@ -1,23 +1,31 @@
+# 로컬 기본값 사용. 운영 시 환경변수로 덮어씀.
 spring:
   application:
     name: log-server
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:local_redis_pass}
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5435/holliverse}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:validate}
+    properties:
+      hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: false
 
 app:
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     topics:
-      client-events: client-event-logs
-      error: error-logs
+      client-events: ${KAFKA_TOPIC_CLIENT_EVENTS:client-event-logs}
+      error: ${KAFKA_TOPIC_ERROR:error-logs}
     groups:
-      speed: speed-layer-group
+      speed: ${KAFKA_GROUP_SPEED:speed-layer-group}
     listener:
-      max-poll-records: 1
+      max-poll-records: ${KAFKA_MAX_POLL_RECORDS:1}
       ack-mode: RECORD
     producer:
-      dlq-acks: all
-      dlq-retries: 3
+      dlq-acks: ${KAFKA_DLQ_ACKS:all}
+      dlq-retries: ${KAFKA_DLQ_RETRIES:3}
+

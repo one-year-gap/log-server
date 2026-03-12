@@ -3,7 +3,7 @@ package com.holliverse.logserver.consumer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.holliverse.logserver.config.properties.KafkaAppProperties;
 import com.holliverse.logserver.dto.LogEvent;
-import com.holliverse.logserver.service.RedisLogService;
+import com.holliverse.logserver.service.PostgresLogService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
 public class SpeedLayerConsumer {
 
     private final ObjectMapper objectMapper;
-    private final RedisLogService redisLogService;
+    private final PostgresLogService postgresLogService;
     private final KafkaTemplate<String, String> dlqKafkaTemplate;
     private final KafkaAppProperties kafkaAppProperties;
 
@@ -32,9 +32,9 @@ public class SpeedLayerConsumer {
     public void consume(ConsumerRecord<String, String> record) {
         try {
             LogEvent event = objectMapper.readValue(record.value(), LogEvent.class);
-            redisLogService.process(event);
+            postgresLogService.process(event);
         } catch (Exception e) {
-            // 역직렬화 or Redis 처리 실패 → DLQ 토픽으로 원본 페이로드 전송
+            // 역직렬화 or PostgreSQL 처리 실패 → DLQ 토픽으로 원본 페이로드 전송
             // 예외를 re-throw하지 않아 다음 메시지 처리가 중단되지 않음 (무한 루프 방지)
             dlqKafkaTemplate.send(
                 kafkaAppProperties.getTopics().getError(),
