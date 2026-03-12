@@ -9,9 +9,7 @@ import org.springframework.context.annotation.Configuration;
 public class KafkaPropertiesConfig {
 
     /**
-     * app.kafka.* 설정을 KafkaAppProperties에 바인딩하는 전용 Bean.
-     * Bean 이름을 명시적으로 'kafkaAppProperties'로 고정해서
-     * SpEL(@kafkaAppProperties)에서 안정적으로 참조할 수 있게 한다.
+     * app.kafka 설정 바인딩 빈.
      */
     @Bean("kafkaAppProperties")
     @ConfigurationProperties(prefix = "app.kafka")
@@ -19,4 +17,3 @@ public class KafkaPropertiesConfig {
         return new KafkaAppProperties();
     }
 }
-

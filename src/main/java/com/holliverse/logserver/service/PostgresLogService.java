@@ -51,7 +51,6 @@ public class PostgresLogService {
 
         repository.upsert(memberId, productId, productName, productType, tags, viewedAt, lastEventId);
         repository.trimOldRecords(memberId, MAX_RECENT_VIEWS);
-
         log.debug("[PostgresLog] UPSERT 완료 memberId={} productId={}", memberId, productId);
     }
 

@@ -21,9 +21,9 @@ public class SpeedLayerConsumer {
     private final KafkaTemplate<String, String> dlqKafkaTemplate;
     private final KafkaAppProperties kafkaAppProperties;
 
-    // topics, groupId를 SpEL로 application.yaml의 app.kafka 값에서 주입
-    // RecordFilterStrategy가 설정 레벨에서 click_product_detail만 통과시키므로
-    // 이 메서드에 도달하는 메시지는 이미 필터링된 상태임
+    /**
+     * 클릭 로그 소비 메서드.
+     */
     @KafkaListener(
         topics = "#{@kafkaAppProperties.topics.clientEvents}",
         groupId = "#{@kafkaAppProperties.groups.speed}",
@@ -31,6 +31,7 @@ public class SpeedLayerConsumer {
     )
     public void consume(ConsumerRecord<String, String> record) {
         try {
+            // 원본 로그 역직렬화
             LogEvent event = objectMapper.readValue(record.value(), LogEvent.class);
             postgresLogService.process(event);
         } catch (Exception e) {
@@ -41,6 +42,7 @@ public class SpeedLayerConsumer {
                 record.key(),
                 record.value()
             );
+            // 에러 로그
             log.error("[SpeedLayer DLQ] topic={}, partition={}, offset={}, err={}",
                 record.topic(), record.partition(), record.offset(), e.getMessage());
         }

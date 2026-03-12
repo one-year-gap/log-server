@@ -13,7 +13,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode
-//	(member_id, product_id) 복합 PK @Embeddable
 public class ProductViewHistoryId implements Serializable {
 
     @Column(name = "member_id", nullable = false)
