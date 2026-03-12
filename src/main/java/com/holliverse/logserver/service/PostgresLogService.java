@@ -26,48 +26,38 @@ public class PostgresLogService {
     private final ObjectMapper objectMapper;
 
     /**
-     * 클릭 로그 DB 반영 메서드.
+     * click_product_detail 이벤트 1건을 product_view_history 테이블에 UPSERT 후
+     * 해당 유저의 레코드가 MAX_RECENT_VIEWS 를 초과하면 오래된 항목 자동 삭제.
      */
     @Transactional
     public void process(LogEvent event) throws JsonProcessingException {
-        // 사용자 아이디
         Long memberId = event.getMemberId();
-        // 속성 변환
         ClickProductDetailProperties props = objectMapper.convertValue(
             event.getEventProperties(),
             ClickProductDetailProperties.class
         );
 
-        // 상품 아이디
         Long productId = props.getProductId();
         if (productId == null) {
             throw new IllegalArgumentException("product_id 변환 실패: null");
         }
-        // 상품 이름
         String productName = props.getProductName();
-        // 상품 타입
         String productType = props.getProductType();
-        // 태그 목록
         List<String> tagList = props.getTags() != null ? props.getTags() : Collections.emptyList();
-        // 태그 직렬화
         String tags = objectMapper.writeValueAsString(tagList);
 
-        // 조회 시각
         OffsetDateTime viewedAt = OffsetDateTime.parse(event.getTimestamp());
-        // 마지막 이벤트 아이디
         Long lastEventId = event.getEventId();
 
-        // 최근 본 상품 upsert
         repository.upsert(memberId, productId, productName, productType, tags, viewedAt, lastEventId);
-        // 오래된 기록 정리
         repository.trimOldRecords(memberId, MAX_RECENT_VIEWS);
-
-        // 처리 로그
         log.debug("[PostgresLog] UPSERT 완료 memberId={} productId={}", memberId, productId);
     }
 
     /**
-     * 클릭 상세 속성 DTO.
+     * click_product_detail 이벤트의 event_properties 전용 DTO.
+     * ObjectMapper.convertValue()로 변환하여 Map 직접 캐스팅 및 ClassCastException을 방지.
+     * JSON 키(snake_case)는 @JsonProperty로 Java CamelCase 필드에 매핑.
      */
     @Getter
     @Setter

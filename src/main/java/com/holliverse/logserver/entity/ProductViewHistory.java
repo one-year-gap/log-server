@@ -27,6 +27,7 @@ public class ProductViewHistory {
     @Column(name = "product_type", nullable = false, length = 50)
     private String productType;
 
+    // List<String>을 JSON 문자열로 직렬화해 저장. DB DDL에서 jsonb 타입으로 선언됨.
     @Column(columnDefinition = "jsonb")
     private String tags;
 

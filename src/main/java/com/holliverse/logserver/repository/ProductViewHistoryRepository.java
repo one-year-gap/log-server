@@ -12,7 +12,9 @@ public interface ProductViewHistoryRepository
     extends JpaRepository<ProductViewHistory, ProductViewHistoryId> {
 
     /**
-     * 최근 본 상품 upsert 쿼리.
+     * 복합 PK (member_id, product_id) 기준 UPSERT.
+     * 동일 사용자가 동일 상품을 재조회하면 나머지 컬럼 전체를 최신값으로 덮어씀.
+     * tags는 Java String → CAST AS jsonb 로 PostgreSQL 레벨에서 변환됨.
      */
     @Modifying
     @Query(value = """
@@ -30,17 +32,18 @@ public interface ProductViewHistoryRepository
             last_event_id = EXCLUDED.last_event_id
         """, nativeQuery = true)
     void upsert(
-        @Param("memberId") Long memberId,
-        @Param("productId") Long productId,
+        @Param("memberId")    Long memberId,
+        @Param("productId")   Long productId,
         @Param("productName") String productName,
         @Param("productType") String productType,
-        @Param("tags") String tags,
-        @Param("viewedAt") OffsetDateTime viewedAt,
+        @Param("tags")        String tags,
+        @Param("viewedAt")    OffsetDateTime viewedAt,
         @Param("lastEventId") Long lastEventId
     );
 
     /**
-     * 유저별 오래된 기록 정리 쿼리.
+     * 유저당 최신 N개(viewed_at DESC)를 초과하는 오래된 레코드 삭제.
+     * 복합 PK 구조라 id 컬럼이 없으므로 product_id NOT IN 서브쿼리로 대상을 특정함.
      */
     @Modifying
     @Query(value = """
@@ -48,10 +51,10 @@ public interface ProductViewHistoryRepository
         WHERE member_id = :memberId
           AND product_id NOT IN (
               SELECT product_id
-              FROM product_view_history
-              WHERE member_id = :memberId
-              ORDER BY viewed_at DESC
-              LIMIT :maxCount
+              FROM   product_view_history
+              WHERE  member_id = :memberId
+              ORDER  BY viewed_at DESC
+              LIMIT  :maxCount
           )
         """, nativeQuery = true)
     void trimOldRecords(

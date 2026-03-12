@@ -33,10 +33,10 @@ public class SpeedLayerConsumer {
         try {
             // 원본 로그 역직렬화
             LogEvent event = objectMapper.readValue(record.value(), LogEvent.class);
-            // DB 반영
             postgresLogService.process(event);
         } catch (Exception e) {
-            // DLQ 전송
+            // 역직렬화 or PostgreSQL 처리 실패 → DLQ 토픽으로 원본 페이로드 전송
+            // 예외를 re-throw하지 않아 다음 메시지 처리가 중단되지 않음 (무한 루프 방지)
             dlqKafkaTemplate.send(
                 kafkaAppProperties.getTopics().getError(),
                 record.key(),
