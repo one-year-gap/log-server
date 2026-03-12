@@ -13,6 +13,7 @@ public class KafkaAppProperties {
     private Groups groups = new Groups();
     private Listener listener = new Listener();
     private Producer producer = new Producer();
+    private Security security = new Security();
 
     @Getter
     @Setter
@@ -32,6 +33,7 @@ public class KafkaAppProperties {
     public static class Listener {
         private int maxPollRecords = 1;
         private ContainerProperties.AckMode ackMode = ContainerProperties.AckMode.RECORD;
+        private boolean autoStartup = true;
     }
 
     @Getter
@@ -39,5 +41,14 @@ public class KafkaAppProperties {
     public static class Producer {
         private String dlqAcks = "all";
         private int dlqRetries = 3;
+    }
+
+    @Getter
+    @Setter
+    public static class Security {
+        private String protocol = "PLAINTEXT";
+        private String saslMechanism;
+        private String saslJaasConfig;
+        private String saslCallbackHandlerClass;
     }
 }
